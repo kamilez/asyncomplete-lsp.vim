@@ -91,14 +91,43 @@ function! s:handle_completion(server_name, opt, ctx, data) abort
     call asyncomplete#complete(a:opt['name'], a:ctx, l:startcol, l:items, l:incomplete)
 endfunction
 
+function! s:completion_item_kind_to_text(kind) abort
+  if a:kind ==  2 "Method
+    return 'm'
+  elseif a:kind == 3 "Function
+    return 'f'
+  elseif a:kind == 4 "Constructor
+    return 'c'
+  elseif a:kind == 5 "Field
+    return 'p'
+  elseif a:kind == 6 "Variable
+    return 'v'
+  elseif a:kind == 7 || a:kind == 22 "Class Structure
+    return 'C'
+  elseif a:kind == 8 "Interface
+    return 'i'
+  elseif a:kind == 13 "Enum
+    return 'e'
+  endif
+
+  return ''
+endfunction
+
 function! s:format_completion_item(item)
+    let l:comp = {'word': a:item['label'], 'abbr': a:item['label'], 'icase': 1, 'dup': 1}
+
     if has_key(a:item, 'insertText') && !empty(a:item['insertText'])
-        let l:word = a:item['insertText']
-        let l:abbr = a:item['label']
-    else
-        let l:word = a:item['label']
-        let l:abbr = ''
+      let l:comp['word'] = a:item['insertText']
     endif
-    let l:menu = lsp#omni#get_kind_text(a:item)
-    return {'word': l:word, 'abbr': l:abbr, 'menu': l:menu, 'icase': 1, 'dup': 1}
+    if has_key(a:item, 'kind') && !empty(a:item['kind'])
+      let l:comp['kind'] = s:completion_item_kind_to_text(a:item['kind'])
+    endif
+    if has_key(a:item, 'documentation') && !empty(a:item['documentation'])
+      let l:comp['info'] = a:item['documentation']
+    endif
+    if has_key(a:item, 'detail') && !empty(a:item['detail'])
+      let l:comp['menu'] = a:item['detail']
+    endif
+
+    return l:comp
 endfunction
